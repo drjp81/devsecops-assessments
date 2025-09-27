@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Assessment: {{ assessment.name }}</h2>
+  <p><strong>Team:</strong> <a href="/teams/{{ team.id }}">{{ team.name }}</a> (Company: <a href="/companies/{{ company.id }}">{{ company.name }}</a>)</p>
+  <p><strong>Date:</strong> {{ assessment.assessment_date or "—" }}</p>
+  <p><strong>GUID Token:</strong> <code>{{ assessment.guid_token }}</code></p>
+  <p><strong>Ingestion URL:</strong> <code>{{ ingest_url }}</code></p>
+  <p><strong>Notes:</strong> {{ assessment.notes or "—" }}</p>
+</section>
+
+<section class="grid">
+  <div class="card">
+    <h3>Add Metric</h3>
+    <form method="post" action="/assessments/{{ assessment.id }}/metrics">
+      <label>Metric Name <input type="text" name="metric_name" placeholder="deployment_frequency_week" required></label>
+      <label>Metric Value <input type="number" step="any" name="metric_value" required></label>
+      <label>Unit <input type="text" name="unit" placeholder="deploys/week, hours, %, days"></label>
+      <button type="submit">Save Metric</button>
+    </form>
+    <hr>
+    <ul>
+      {% for m in metrics %}
+      <li>{{ m.metric_name }} = {{ m.metric_value }} {{ m.unit or "" }} ({{ m.collected_at.strftime("%Y-%m-%d") }})</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Add Score (Maturity)</h3>
+    <form method="post" action="/assessments/{{ assessment.id }}/scores">
+      <label>Model (e.g., SAMM, BSIMM, SSDF, SLSA, Auditability) <input type="text" name="model_name" required></label>
+      <label>Practice Code (e.g., TST.1) <input type="text" name="code" required></label>
+      <label>Practice Name (optional) <input type="text" name="practice_name"></label>
+      <label>Level (0..3) <input type="number" name="level" min="0" max="3" required></label>
+      <label>Evidence URI <input type="text" name="evidence_uri"></label>
+      <label>Notes <textarea name="notes"></textarea></label>
+      <button type="submit">Save Score</button>
+    </form>
+    <hr>
+    <ul>
+      {% for s in scores %}
+      <li>[{{ s.practice.model.name }} {{ s.practice.code }}] level {{ s.level }}
+        {% if s.evidence_uri %} — <a href="{{ s.evidence_uri }}" target="_blank">evidence</a>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="grid">
+  <div class="card">
+    <h3>Add Control Evidence</h3>
+    <form method="post" action="/assessments/{{ assessment.id }}/controls">
+      <label>Domain <input type="text" name="domain" placeholder="SSDF, CIS, SLSA"></label>
+      <label>Control <input type="text" name="control" required placeholder="SSDF-PS.3"></label>
+      <label>Standard <input type="text" name="standard" placeholder="SSDF"></label>
+      <label>Level <input type="text" name="level" placeholder="L1/L2/L3 or control number"></label>
+      <label>Evidence URI <input type="text" name="evidence_uri" placeholder="http(s)://..."></label>
+      <button type="submit">Save Evidence</button>
+    </form>
+    <hr>
+    <ul>
+      {% for c in controls %}
+      <li>[{{ c.standard or c.domain or "—" }} {{ c.control }}] {{ c.level or "" }} — {% if c.evidence_uri %}<a href="{{ c.evidence_uri }}" target="_blank">evidence</a>{% else %}no link{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Paste Raw JSON (manual)</h3>
+    <form method="post" action="/assessments/{{ assessment.id }}/raw">
+      <label>Source <input type="text" name="source" placeholder="github, azuredevops, sonar"></label>
+      <label>JSON Payload <textarea name="payload_text" placeholder='{"key":"value"}' required></textarea></label>
+      <button type="submit">Save Raw</button>
+    </form>
+    <hr>
+    <ul>
+      {% for r in raw %}
+      <li>{{ r.collected_at.strftime("%Y-%m-%d %H:%M") }} — {{ r.source or "—" }} — {{ (r.payload[:100] ~ '…') if r.payload|length > 100 else r.payload }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="card">
+  <h3>PowerShell: POST raw data</h3>
+  <pre><code>$guid = "{{ assessment.guid_token }}"
+$uri  = "http://localhost:8000/api/ingest/$guid/raw"
+$body = @{ 
+  repo = "yourco/payments-service"
+  pr   = 1234
+  merged_at = (Get-Date).ToString("o")
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod -Method Post -Uri $uri -ContentType "application/json" -Body $body -Headers @{"X-Source"="github"}
+</code></pre>
+</section>
+{% endblock %}

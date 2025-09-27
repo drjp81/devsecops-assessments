@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Team: {{ team.name }}</h2>
+  <p><strong>Company:</strong> <a href="/companies/{{ company.id }}">{{ company.name }}</a></p>
+  <p><strong>Nickname:</strong> {{ team.nickname or "—" }}</p>
+  <p><strong>Purpose:</strong> {{ team.purpose or "—" }}</p>
+  <p><strong>Description:</strong> {{ team.description or "—" }}</p>
+</section>
+
+<section class="card">
+  <h3>Assessments</h3>
+  <ul>
+    {% for a in assessments %}
+      <li><a href="/assessments/{{ a.id }}">{{ a.name }}</a> {% if a.assessment_date %} ({{ a.assessment_date }}){% endif %}</li>
+    {% endfor %}
+  </ul>
+  <h4>Create Assessment</h4>
+  <form method="post" action="/teams/{{ team.id }}/assessments">
+    <label>Name <input type="text" name="name" required></label>
+    <label>Date (YYYY-MM-DD) <input type="text" name="assessment_date"></label>
+    <label>Notes <textarea name="notes"></textarea></label>
+    <button type="submit">Create Assessment</button>
+  </form>
+</section>
+{% endblock %}

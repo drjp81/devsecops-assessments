@@ -1,0 +1,21 @@
+{% set title = title or "Assessments" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/companies">DevSecOps Assessments</a></h1>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <footer>
+    <small>© JPSoftWorks</small>
+  </footer>
+</body>
+</html>

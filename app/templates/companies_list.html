@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Companies</h2>
+  <table>
+    <thead><tr><th>Name</th><th>Address</th><th>Contact</th><th>Created</th></tr></thead>
+    <tbody>
+      {% for c in companies %}
+      <tr>
+        <td><a href="/companies/{{ c.id }}">{{ c.name }}</a></td>
+        <td>{{ c.address or "" }}</td>
+        <td>{{ c.contact_person or "" }}</td>
+        <td>{{ c.created_at.strftime("%Y-%m-%d") }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h3>Add Company</h3>
+  <form method="post" action="/companies">
+    <label>Name <input type="text" name="name" required></label>
+    <label>Address <input type="text" name="address"></></label>
+    <label>Contact person <input type="text" name="contact_person"></label>
+    <button type="submit">Create</button>
+  </form>
+</section>
+{% endblock %}

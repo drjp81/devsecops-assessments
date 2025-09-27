@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Company: {{ company.name }}</h2>
+  <p><strong>Address:</strong> {{ company.address or "—" }}</p>
+  <p><strong>Contact:</strong> {{ company.contact_person or "—" }}</p>
+</section>
+
+<section class="card">
+  <h3>Teams</h3>
+  <table>
+    <thead><tr><th>Name</th><th>Nickname</th><th>Purpose</th></tr></thead>
+    <tbody>
+    {% for t in teams %}
+      <tr>
+        <td><a href="/teams/{{ t.id }}">{{ t.name }}</a></td>
+        <td>{{ t.nickname or "" }}</td>
+        <td>{{ t.purpose or "" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Add Team</h4>
+  <form method="post" action="/companies/{{ company.id }}/teams">
+    <label>Name <input type="text" name="name" required></label>
+    <label>Nickname <input type="text" name="nickname"></label>
+    <label>Purpose <input type="text" name="purpose"></label>
+    <label>Description <textarea name="description"></textarea></label>
+    <button type="submit">Add Team</button>
+  </form>
+</section>
+{% endblock %}
