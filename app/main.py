@@ -3,13 +3,12 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from datetime import date
-import uuid, json
+import uuid, json, os
 
-from .database import Base, engine, get_db
-from . import models
+from database import Base, engine, get_db
+import models
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-import os
 
 Base.metadata.create_all(bind=engine)
 
@@ -71,7 +70,15 @@ def team_detail(team_id: int, db: Session = Depends(get_db)):
     team = db.get(models.Team, team_id)
     if not team:
         return HTMLResponse("Team not found", status_code=404)
-    assessments = db.query(models.Assessment).filter_by(team_id=team_id).order_by(models.Assessment.assessment_date.desc().nullslast()).all()
+    assessments = (
+        db.query(models.Assessment)
+            .filter_by(team_id=team_id)
+            .order_by(
+            models.Assessment.assessment_date.is_(None),     # non-null first, nulls last
+            models.Assessment.assessment_date.desc()
+            )
+            .all()
+        )
     return render("team_detail.html", team=team, company=team.company, assessments=assessments)
 
 # -------------------- Assessments --------------------
@@ -153,9 +160,8 @@ def add_control(assessment_id: int,
 
 @app.post("/assessments/{assessment_id}/raw", response_class=HTMLResponse)
 def add_raw_manual(assessment_id: int, source: str = Form(None), payload_text: str = Form(...), db: Session = Depends(get_db)):
-    # Accept pasted JSON and store as text
     try:
-        _ = json.loads(payload_text)  # validate
+        _ = json.loads(payload_text)  # validate JSON
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}")
     r = models.RawData(assessment_id=assessment_id, source=(source or None), payload=payload_text)
@@ -165,7 +171,6 @@ def add_raw_manual(assessment_id: int, source: str = Form(None), payload_text: s
 # -------------------- JSON Ingestion API --------------------
 @app.post("/api/ingest/{guid_token}/raw")
 async def ingest_raw(guid_token: str, request: Request, db: Session = Depends(get_db)):
-    # Find assessment by GUID
     a = db.query(models.Assessment).filter_by(guid_token=guid_token).first()
     if not a:
         raise HTTPException(status_code=404, detail="Assessment token not found")
