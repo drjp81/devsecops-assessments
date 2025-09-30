@@ -1,31 +1,37 @@
-version: "3.9"
-
 services:
   db:
-    image: mariadb:11.4
+    image: mariadb:latest
+    hostname: db
     restart: always
+    env_file:
+      - .env
     environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: assessments
-      MYSQL_USER: appuser
-      MYSQL_PASSWORD: apppass
+      # Map your unified DB_* vars to the image-specific MYSQL_* vars
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - dbdata:/var/lib/mysql
+      - ${DATA_DIR}:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "${DB_PORT}:3306"
 
   web:
     build: ./app
     depends_on:
       - db
+    restart: always
+    env_file:
+      - .env
     environment:
-      DB_HOST: db
-      DB_PORT: "3306"
-      DB_USER: appuser
-      DB_PASSWORD: apppass
-      DB_NAME: assessments
+      # App reads the same unified vars directly
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
     ports:
-      - "8000:8000"
+      - "${WEB_PORT_HOST}:8000"
     volumes:
       - ./app:/app
 
@@ -33,7 +39,4 @@ services:
     image: adminer:4
     restart: always
     ports:
-      - "8080:8080"
-
-volumes:
-  dbdata:
+      - "${ADMINER_PORT_HOST}:8080"
